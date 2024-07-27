@@ -3,8 +3,12 @@
 <base href="https://boccettetrainingtable.netlify.app/">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Boccette & Matamà</title>
-<link href="https://fonts.googleapis.com/css2?family=Italianno&display=swap" rel="stylesheet">
+<title>Boccette & Matamà - Arcade Battle</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bangers&family=Monsieur+La+Doulaise&family=Press+Start+2P&family=Quicksand:wght@300..700&display=swap" rel="stylesheet">
+
 <style>
 body {
     margin: 0;
@@ -46,6 +50,10 @@ body {
     margin-bottom: 20px;
     font-size: 14px;
     color: #ecf0f1;
+	font-family: "Quicksand", sans-serif;
+	font-optical-sizing: auto;
+	font-weight: <weight>;
+	font-style: normal;
 }
 
 #watermark {
@@ -53,8 +61,10 @@ body {
     left: 50%;
     transform: translateX(-50%);
     font-size: 72px;
-    font-family: 'Italianno', cursive;
-    color: rgba(255, 255, 255, 0.1);
+	font-family: "Monsieur La Doulaise", cursive;
+	font-weight: 400;
+	font-style: normal;
+    color: rgba(255, 255, 255, 0.2);
     pointer-events: none;
     white-space: nowrap;
 }
@@ -64,9 +74,17 @@ body {
     margin-bottom: 10px;
     font-size: 14px;
     text-align: center;
+	font-family: "Quicksand", sans-serif;
+	font-optical-sizing: auto;
+	font-weight: 300;
+	font-style: normal;
 }
 
 #controls {
+	font-family: "Quicksand", sans-serif;
+	font-optical-sizing: auto;
+	font-weight: 300;
+	font-style: normal;
     margin-top: 20px;
     margin-bottom: 10px;
     padding-top: 5px;
@@ -79,6 +97,10 @@ body {
 }
 
 #controls button {
+	font-family: "Quicksand", sans-serif;
+	font-optical-sizing: auto;
+	font-weight: 300;
+	font-style: normal;
     padding: 5px 10px;
     background-color: #3498db;
     color: white;
@@ -91,11 +113,15 @@ body {
 }
 
 #message {
+	font-family: "Quicksand", sans-serif;
+	font-optical-sizing: auto;
+	font-weight: 300;
+	font-style: normal;
+	font-size: 24px;
     position: absolute;
     top: 30%;
     left: 50%;
     transform: translate(-50%, -50%);
-    font-size: 24px;
     color: red;
     background-color: rgba(255, 255, 255, 0.8);
     padding: 10px;
@@ -103,17 +129,35 @@ body {
     display: none;
 }
 #title {
-    font-family: 'Italianno', cursive;
+	font-family: "Bangers", system-ui;
+	font-weight: 400;
+	font-style: normal;
     font-size: 48px;
     color: #ffffff;
     text-align: center;
     margin-top: 10px;
     margin-bottom: 3px;
 }
+#game-setup {
+	font-family: "Quicksand", sans-serif;
+	font-optical-sizing: auto;
+	font-weight: 300;
+    font-size: 20px;
+	font-style: normal;
+}
+#scoreboard {
+	font-family: "Bangers", system-ui;
+	font-weight: 400;
+	font-style: normal;
+    text-align: center;
+    font-size: 32px;
+    color: #ffffff;
+}
 </style>
 </head>
 <body>
-<h1 id="title">Boccette & Matamà</h1>
+<h1 id="title">Boccette & Matamà - Arcade Battle</h1>
+
 <div id="controls">
     <label for="tableWidth">Larghezza (cm):</label>
     <input type="number" id="tableWidth" value="277.0" min="100" max="500" step="0.1">
@@ -121,20 +165,42 @@ body {
     <input type="number" id="tableLength" value="138.5" min="100" max="500" step="0.1">
     <label for="friction">Coefficiente di scorrimento (0-1):</label>
     <input type="number" id="friction" value="0.93" min="0.8" max="0.999" step="0.001">
-    <label for="showGhost">Mostra traiettoria:</label>
+    <label for="difficultyLevel">Livello di difficoltà:</label>
+		<select id="difficultyLevel">
+			<option value="100">Principiante</option>
+			<option value="50" selected>Normale</option>
+			<option value="30">Maestro</option>
+			<option value="5">Grappa</option>
+		</select>
+	<label for="showGhost">Mostra traiettoria:</label>
     <input type="checkbox" id="showGhost">
+	
     <button onclick="updateTable()">Aggiorna</button>
 </div>
 
 <div id="instructions">
-    Clicca per posizionare la palla rossa, poi la bianca, infine sposta il mouse per definire direzione e forza
+    Clicca per attivare il tiro, muovi il mouse per definire direzione e forza, clicca di nuovo per tirare
 </div>
 
 <div id="game-container">
     <div id="pool-table"></div>
     <div id="watermark">Boccette & Matamà</div>
-    <div id="message"></div>
 </div>
+<table id="scoreboard" style="width: 100%;">
+    <tr>
+        <td id="whiteScore" style="color: white; text-align: center;">Bianco: 0</td>
+        <td id="game-setup">
+            <label for="numRounds">Numero di turni:</label>
+            <input type="number" id="numRounds" value="5" min="1" max="20">
+            <button onclick="startGame()">Inizia Partita</button>
+        </td>
+        <td id="redScore" style="color: red; text-align: center;">Rosso: 0</td>
+    </tr>
+	<tr>
+	    <div id="message"></div>
+	</tr>
+</table>
+
 
 <div id="credits">Developed by molder, for boccettari friends, in honor of Nino Agliolo.</div>
 
@@ -155,11 +221,44 @@ let showGhost = false;
 let castle;
 let message;
 let ballPath = [];
-let placingRedBall = true;
+
+let currentPlayer = 'white';
+let whiteScore = 0;
+let redScore = 0;
+let numRounds = 5;
+let currentRound = 1;
+let gameStarted = false;
+
+let messageQueue = [];
+let isDisplayingMessage = false;
+
+let isShotInProgress = false;
+let shotJustEnded = false;
+
+let pointScored = false;
+
+let firstBallToCastle = null;
+let secondBallToCastle = null;
 
 function setup() {
     updateTable();
     message = document.getElementById('message');
+    updateDifficulty(); // Inizializza la difficoltà
+	document.getElementById('difficultyLevel').addEventListener('change', updateDifficulty);
+}
+
+function startGame() {
+    numRounds = parseInt(document.getElementById('numRounds').value);
+    gameStarted = true;
+    currentRound = 1;
+    whiteScore = 0;
+    redScore = 0;
+    currentPlayer = Math.random() < 0.5 ? 'white' : 'red';
+    updateScoreboard();
+    resetBalls();
+    setTimeout(() => {
+        showMessage(`Inizia il giocatore ${currentPlayer === 'white' ? 'Bianco' : 'Rosso'}`, 3000);
+    }, 100);
 }
 
 function updateTable() {
@@ -178,13 +277,30 @@ function updateTable() {
     document.getElementById('game-container').style.width = TABLE_WIDTH + 40 + 'px';
     document.getElementById('game-container').style.height = TABLE_HEIGHT + 40 + 'px';
     
-    whiteBall = new Ball(width / 3, height / 3, BALL_DIAMETER, 'white');
-    redBall = new Ball(2 * width / 3, height / 3, BALL_DIAMETER, 'red');
     castle = new Castle(width / 2, height / 2);
     createDiamonds();
     updateWatermarkPosition();
     ballPath = [];
-    placingRedBall = true;
+    
+    if (gameStarted) {
+        resetBalls();
+    }
+}
+
+function updateDifficulty() {
+    let difficultyLevel = document.getElementById('difficultyLevel').value;
+    console.log("Difficoltà impostata a: " + difficultyLevel);
+    // Qui puoi aggiungere altre azioni se necessario
+}
+
+function resetBalls() {
+    do {
+        whiteBall = new Ball(random(width), random(height), BALL_DIAMETER, 'white');
+    } while (castle.checkCollision(whiteBall));
+
+    do {
+        redBall = new Ball(random(width), random(height), BALL_DIAMETER, 'red');
+    } while (castle.checkCollision(redBall) || dist(whiteBall.x, whiteBall.y, redBall.x, redBall.y) < BALL_DIAMETER);
 }
 
 function updateWatermarkPosition() {
@@ -195,6 +311,9 @@ function updateWatermarkPosition() {
 function draw() {
     background('#27ae60');
     castle.display();
+    createDiamonds();
+    
+    if (!gameStarted) return;
     
     if (showGhost && ballPath.length > 0) {
         noFill();
@@ -212,13 +331,22 @@ function draw() {
         redBall.update();
         checkCollision(whiteBall, redBall);
         
-        // Controllo collisione con il castello per ogni substep
-        if (castle.checkCollision(whiteBall)) {
-            showMessage("Hai bevuto! Niente matamà per te");
-        }
-        if (castle.checkCollision(redBall)) {
-            showMessage("Bel colpo!");
-        }
+		if (castle.checkCollision(whiteBall)) {
+			if (!firstBallToCastle) {
+				firstBallToCastle = 'white';
+			} else if (firstBallToCastle !== 'white') {
+				secondBallToCastle = 'white';
+			}
+			pointScored = true;
+		}
+		if (castle.checkCollision(redBall)) {
+			if (!firstBallToCastle) {
+				firstBallToCastle = 'red';
+			} else if (firstBallToCastle !== 'red') {
+				secondBallToCastle = 'red';
+			}
+			pointScored = true;
+		}
     }
 
     whiteBall.display();
@@ -232,69 +360,125 @@ function draw() {
         }
     }
 
-    // Aggiornamento del percorso della pallina bianca
-    if (abs(whiteBall.vx) > 0.01 || abs(whiteBall.vy) > 0.01) {
-        ballPath.push({x: whiteBall.x, y: whiteBall.y});
+    // Aggiornamento del percorso della pallina attiva
+    let activeBall = currentPlayer === 'white' ? whiteBall : redBall;
+    if (abs(activeBall.vx) > 0.01 || abs(activeBall.vy) > 0.01) {
+        ballPath.push({x: activeBall.x, y: activeBall.y});
     } else {
-        // Resetta il percorso quando la pallina si ferma
         ballPath = [];
     }
 
-    // Limita la lunghezza del percorso per evitare problemi di prestazioni
     if (ballPath.length > 1000) {
         ballPath.splice(0, ballPath.length - 1000);
     }
+
+    if (isShotInProgress && areBallsStationary()) {
+        isShotInProgress = false;
+        shotJustEnded = true;
+    }
+
+    if (shotJustEnded) {
+        shotJustEnded = false;
+        handleShotEnd();
+    }
+
+    if (isShotInProgress && areBallsStationary()) {
+        isShotInProgress = false;
+        shotJustEnded = true;
+    }
+
+    if (shotJustEnded) {
+        shotJustEnded = false;
+        handleShotEnd();
+    }
+	
 }
 
 function canvasMousePressed() {
-    if (placingRedBall) {
-        redBall.x = mouseX;
-        redBall.y = mouseY;
-        redBall.vx = 0;
-        redBall.vy = 0;
-        placingRedBall = false;
-    } else if (!isDragging) {
-        startX = mouseX;
-        startY = mouseY;
-        whiteBall.x = startX;
-        whiteBall.y = startY;
-        whiteBall.vx = 0;
-        whiteBall.vy = 0;
+    if (!gameStarted || isShotInProgress) return;
+
+    let activeBall = currentPlayer === 'white' ? whiteBall : redBall;
+
+    if (!isDragging) {
+        startX = activeBall.x;
+        startY = activeBall.y;
         isDragging = true;
         ghostPath = [];
         ballPath = [];
     } else {
-        let force = dist(startX, startY, mouseX, mouseY) / 10;
+        let difficultyFactor = parseFloat(document.getElementById('difficultyLevel').value);
+        let distance = dist(startX, startY, mouseX, mouseY);
+        let force = distance / difficultyFactor;
         let angle = atan2(mouseY - startY, mouseX - startX);
-        whiteBall.applyForce(force * cos(angle), force * sin(angle));
+        activeBall.applyForce(force * cos(angle), force * sin(angle));
         isDragging = false;
-        placingRedBall = true;
+        isShotInProgress = true;
     }
 }
 
+function handleShotEnd() {
+    let winner = '';
+
+    if (pointScored) {
+        if (firstBallToCastle && secondBallToCastle) {
+            // Se entrambe le palle hanno colpito il castello, il punto va all'avversario di chi ha tirato
+            winner = currentPlayer === 'white' ? 'red' : 'white';
+        } else if (firstBallToCastle === 'white') {
+            winner = 'red';
+        } else if (firstBallToCastle === 'red') {
+            winner = 'white';
+        }
+        endTurn(winner);
+    } else {
+        switchPlayer();
+    }
+
+    // Resettiamo le variabili
+    pointScored = false;
+    firstBallToCastle = null;
+    secondBallToCastle = null;
+}
+
 function createDiamonds() {
-    const gameContainer = document.getElementById('game-container');
-    const existingDiamonds = gameContainer.querySelectorAll('.diamond');
-    existingDiamonds.forEach(diamond => diamond.remove());
-
-    const diamondPositions = [
-        ...Array(9).fill().map((_, i) => ({x: i/8, y: 0})),
-        ...Array(9).fill().map((_, i) => ({x: i/8, y: 1})),
-        ...Array(5).fill().map((_, i) => ({x: 0, y: i/4})),
-        ...Array(5).fill().map((_, i) => ({x: 1, y: i/4}))
-    ];
-
-    diamondPositions.forEach(pos => {
-        let diamond = createDiv('');
-        diamond.addClass('diamond');
-        diamond.position(pos.x * TABLE_WIDTH + 15, pos.y * TABLE_HEIGHT + 15);
-        diamond.parent('game-container');
-    });
+    fill(255);
+    noStroke();
+    for (let i = 0; i < 9; i++) {
+        let x = i * (width / 8);
+        push();
+        translate(x, 0);
+        rotate(PI / 4);
+        rect(-5, -5, 10, 10);
+        pop();
+        
+        push();
+        translate(x, height);
+        rotate(PI / 4);
+        rect(-5, -5, 10, 10);
+        pop();
+    }
+    
+    for (let i = 1; i < 4; i++) {
+        let y = i * (height / 4);
+        push();
+        translate(0, y);
+        rotate(PI / 4);
+        rect(-5, -5, 10, 10);
+        pop();
+        
+        push();
+        translate(width, y);
+        rotate(PI / 4);
+        rect(-5, -5, 10, 10);
+        pop();
+    }
 }
 
 function drawGhostPath() {
-    let ghostBall = new Ball(startX, startY, BALL_DIAMETER, 'white');
-    let force = dist(startX, startY, mouseX, mouseY) / 10;
+    let activeBall = currentPlayer === 'white' ? whiteBall : redBall;
+    let ghostBall = new Ball(activeBall.x, activeBall.y, BALL_DIAMETER, activeBall.color);
+    let difficultyFactor = parseFloat(document.getElementById('difficultyLevel').value);
+    let distance = dist(startX, startY, mouseX, mouseY);
+    let force = distance / difficultyFactor;
     let angle = atan2(mouseY - startY, mouseX - startX);
     ghostBall.applyForce(force * cos(angle), force * sin(angle));
 
@@ -313,12 +497,72 @@ function drawGhostPath() {
     endShape();
 }
 
-function showMessage(text) {
+function showMessage(text, duration = 2000) {
+    messageQueue.push({ text, duration });
+    if (!isDisplayingMessage) {
+        displayNextMessage();
+    }
+}
+
+function displayNextMessage() {
+    if (messageQueue.length === 0) {
+        isDisplayingMessage = false;
+        return;
+    }
+
+    isDisplayingMessage = true;
+    let { text, duration } = messageQueue.shift();
     message.textContent = text;
     message.style.display = 'block';
+    
     setTimeout(() => {
         message.style.display = 'none';
-    }, 2000);
+        setTimeout(displayNextMessage, 100); // Breve pausa tra i messaggi
+    }, duration);
+}
+
+function areBallsStationary() {
+    return (Math.abs(whiteBall.vx) < 0.01 && Math.abs(whiteBall.vy) < 0.01 &&
+            Math.abs(redBall.vx) < 0.01 && Math.abs(redBall.vy) < 0.01);
+}
+
+function switchPlayer() {
+    currentPlayer = currentPlayer === 'white' ? 'red' : 'white';
+    showMessage(`Turno del giocatore ${currentPlayer === 'white' ? 'Bianco' : 'Rosso'}`, 2000);
+}
+
+function endTurn(winner) {
+    if (winner === 'white') {
+        whiteScore++;
+    } else {
+        redScore++;
+    }
+    updateScoreboard();
+    
+    // Mostra il messaggio di punto
+    showMessage(`Punto al giocatore ${winner === 'white' ? 'Bianco' : 'Rosso'}!`, 2000);
+    
+    if (currentRound < numRounds) {
+        currentRound++;
+        setTimeout(() => {
+            resetBalls();
+            currentPlayer = winner;  // Il vincitore inizia il prossimo turno
+            showMessage(`Turno ${currentRound}. Inizia il giocatore ${currentPlayer === 'white' ? 'Bianco' : 'Rosso'}`, 3000);
+        }, 2100);  // Aggiungiamo un piccolo ritardo per assicurarci che il messaggio di punto sia visualizzato completamente
+    } else {
+        setTimeout(endGame, 2100);  // Ritardiamo la fine del gioco per assicurarci che il messaggio di punto sia visualizzato
+    }
+}
+
+function updateScoreboard() {
+    document.getElementById('whiteScore').textContent = `Bianco: ${whiteScore}`;
+    document.getElementById('redScore').textContent = `Rosso: ${redScore}`;
+}
+
+function endGame() {
+    gameStarted = false;
+    let winner = whiteScore > redScore ? 'Bianco' : (redScore > whiteScore ? 'Rosso' : 'Pareggio');
+    showMessage(`Gioco terminato! ${winner === 'Pareggio' ? 'Pareggio!' : 'Vince ' + winner}`, 5000);
 }
 
 class Ball {
@@ -330,53 +574,48 @@ class Ball {
         this.vx = 0;
         this.vy = 0;
         this.color = color;
-        this.mass = 1; // Aggiunto massa
+        this.mass = 1;
     }
 
-	update() {
-		// Calcoliamo la nuova posizione
-		let newX = this.x + this.vx;
-		let newY = this.y + this.vy;
+    update() {
+        let newX = this.x + this.vx;
+        let newY = this.y + this.vy;
 
-		// Controlliamo le collisioni con le pareti
-		if (newX - this.radius < 0) {
-			newX = this.radius;
-			this.vx = Math.abs(this.vx) * RESTITUTION;
-		} else if (newX + this.radius > width) {
-			newX = width - this.radius;
-			this.vx = -Math.abs(this.vx) * RESTITUTION;
-		}
+        if (newX - this.radius < 0) {
+            newX = this.radius;
+            this.vx = Math.abs(this.vx) * RESTITUTION;
+        } else if (newX + this.radius > width) {
+            newX = width - this.radius;
+            this.vx = -Math.abs(this.vx) * RESTITUTION;
+        }
 
-		if (newY - this.radius < 0) {
-			newY = this.radius;
-			this.vy = Math.abs(this.vy) * RESTITUTION;
-		} else if (newY + this.radius > height) {
-			newY = height - this.radius;
-			this.vy = -Math.abs(this.vy) * RESTITUTION;
-		}
+        if (newY - this.radius < 0) {
+            newY = this.radius;
+            this.vy = Math.abs(this.vy) * RESTITUTION;
+        } else if (newY + this.radius > height) {
+            newY = height - this.radius;
+            this.vy = -Math.abs(this.vy) * RESTITUTION;
+        }
 
-		// Aggiorniamo la posizione
-		this.x = newX;
-		this.y = newY;
+        this.x = newX;
+        this.y = newY;
 
-		// Applichiamo l'attrito
-		let speed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
-		if (speed > 0) {
-			let frictionMagnitude = (1 - FRICTION) * 0.1;
-			let frictionX = (this.vx / speed) * frictionMagnitude;
-			let frictionY = (this.vy / speed) * frictionMagnitude;
-			this.vx = Math.sign(this.vx) * Math.max(0, Math.abs(this.vx) - Math.abs(frictionX));
-			this.vy = Math.sign(this.vy) * Math.max(0, Math.abs(this.vy) - Math.abs(frictionY));
-		}
+        let speed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
+        if (speed > 0) {
+            let frictionMagnitude = (1 - FRICTION) * 0.1;
+            let frictionX = (this.vx / speed) * frictionMagnitude;
+            let frictionY = (this.vy / speed) * frictionMagnitude;
+            this.vx = Math.sign(this.vx) * Math.max(0, Math.abs(this.vx) - Math.abs(frictionX));
+            this.vy = Math.sign(this.vy) * Math.max(0, Math.abs(this.vy) - Math.abs(frictionY));
+        }
 
-		// Fermiamo la pallina se la velocità è molto bassa
-		if (Math.abs(this.vx) < 0.01 && Math.abs(this.vy) < 0.01) {
-			this.vx = 0;
-			this.vy = 0;
-		}
-	}
-	
-	    display() {
+        if (Math.abs(this.vx) < 0.01 && Math.abs(this.vy) < 0.01) {
+            this.vx = 0;
+            this.vy = 0;
+        }
+    }
+    
+    display() {
         fill(this.color);
         noStroke();
         ellipse(this.x, this.y, this.diameter);
@@ -386,15 +625,14 @@ class Ball {
         this.vx = fx;
         this.vy = fy;
     }
-	
 }
 
 class Castle {
     constructor(x, y) {
         this.x = x;
         this.y = y;
-        this.pinRadius = 2; // 4mm * 4px/cm * 0.1cm/mm
-        this.distance = 24; // 60mm * 4px/cm * 0.1cm/mm
+        this.pinRadius = 2;
+        this.distance = 24;
     }
 
     display() {
@@ -407,7 +645,7 @@ class Castle {
         ellipse(this.x, this.y + this.distance, this.pinRadius * 2);
     }
 
-    checkCollision(ball) {
+	checkCollision(ball) {
         let pins = [
             {x: this.x, y: this.y},
             {x: this.x - this.distance, y: this.y},
