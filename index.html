@@ -120,7 +120,7 @@ body {
     <label for="tableLength">Lunghezza (cm):</label>
     <input type="number" id="tableLength" value="138.5" min="100" max="500" step="0.1">
     <label for="friction">Coefficiente di scorrimento (0-1):</label>
-    <input type="number" id="friction" value="0.99" min="0.8" max="0.999" step="0.001">
+    <input type="number" id="friction" value="0.93" min="0.8" max="0.999" step="0.001">
     <label for="showGhost">Mostra traiettoria:</label>
     <input type="checkbox" id="showGhost">
     <button onclick="updateTable()">Aggiorna</button>
@@ -143,7 +143,7 @@ body {
 let TABLE_WIDTH = 1108; // 277cm * 4px/cm
 let TABLE_HEIGHT = 554; // 138.5cm * 4px/cm
 const BALL_DIAMETER = 23.2; // 58mm * 4px/cm * 0.1cm/mm
-let FRICTION = 0.99;
+let FRICTION = 0.90;
 const RESTITUTION = 0.8;
 
 let whiteBall, redBall;
@@ -206,8 +206,21 @@ function draw() {
         endShape();
     }
     
-    whiteBall.update();
-    redBall.update();
+    const SUBSTEPS = 5;
+    for (let i = 0; i < SUBSTEPS; i++) {
+        whiteBall.update();
+        redBall.update();
+        checkCollision(whiteBall, redBall);
+        
+        // Controllo collisione con il castello per ogni substep
+        if (castle.checkCollision(whiteBall)) {
+            showMessage("Hai bevuto! Niente matamà per te");
+        }
+        if (castle.checkCollision(redBall)) {
+            showMessage("Bel colpo!");
+        }
+    }
+
     whiteBall.display();
     redBall.display();
 
@@ -219,16 +232,17 @@ function draw() {
         }
     }
 
-    checkCollision(whiteBall, redBall);
-
-    if (castle.checkCollision(whiteBall)) {
-        showMessage("Hai bevuto! Niente matamà per te");
-    } else if (castle.checkCollision(redBall)) {
-        showMessage("Bel colpo!");
-    }
-    
+    // Aggiornamento del percorso della pallina bianca
     if (abs(whiteBall.vx) > 0.01 || abs(whiteBall.vy) > 0.01) {
         ballPath.push({x: whiteBall.x, y: whiteBall.y});
+    } else {
+        // Resetta il percorso quando la pallina si ferma
+        ballPath = [];
+    }
+
+    // Limita la lunghezza del percorso per evitare problemi di prestazioni
+    if (ballPath.length > 1000) {
+        ballPath.splice(0, ballPath.length - 1000);
     }
 }
 
@@ -319,37 +333,60 @@ class Ball {
         this.mass = 1; // Aggiunto massa
     }
 
-    update() {
-        this.x += this.vx;
-        this.y += this.vy;
+	update() {
+		// Calcoliamo la nuova posizione
+		let newX = this.x + this.vx;
+		let newY = this.y + this.vy;
 
-        // Collisione con le pareti
-        if (this.x - this.radius < 0) {
-            this.x = this.radius;
-            this.vx = Math.abs(this.vx) * RESTITUTION;
-        } else if (this.x + this.radius > width) {
-            this.x = width - this.radius;
-            this.vx = -Math.abs(this.vx) * RESTITUTION;
-        }
+		// Controlliamo le collisioni con le pareti
+		if (newX - this.radius < 0) {
+			newX = this.radius;
+			this.vx = Math.abs(this.vx) * RESTITUTION;
+		} else if (newX + this.radius > width) {
+			newX = width - this.radius;
+			this.vx = -Math.abs(this.vx) * RESTITUTION;
+		}
 
-        if (this.y - this.radius < 0) {
-            this.y = this.radius;
-            this.vy = Math.abs(this.vy) * RESTITUTION;
-        } else if (this.y + this.radius > height) {
-            this.y = height - this.radius;
-            this.vy = -Math.abs(this.vy) * RESTITUTION;
-        }
+		if (newY - this.radius < 0) {
+			newY = this.radius;
+			this.vy = Math.abs(this.vy) * RESTITUTION;
+		} else if (newY + this.radius > height) {
+			newY = height - this.radius;
+			this.vy = -Math.abs(this.vy) * RESTITUTION;
+		}
 
-        // Applicare l'attrito
-        this.vx *= FRICTION;
-        this.vy *= FRICTION;
+		// Aggiorniamo la posizione
+		this.x = newX;
+		this.y = newY;
 
-        // Fermare la pallina se la velocità è molto bassa
-        if (Math.abs(this.vx) < 0.01 && Math.abs(this.vy) < 0.01) {
-            this.vx = 0;
-            this.vy = 0;
-        }
+		// Applichiamo l'attrito
+		let speed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
+		if (speed > 0) {
+			let frictionMagnitude = (1 - FRICTION) * 0.1;
+			let frictionX = (this.vx / speed) * frictionMagnitude;
+			let frictionY = (this.vy / speed) * frictionMagnitude;
+			this.vx = Math.sign(this.vx) * Math.max(0, Math.abs(this.vx) - Math.abs(frictionX));
+			this.vy = Math.sign(this.vy) * Math.max(0, Math.abs(this.vy) - Math.abs(frictionY));
+		}
+
+		// Fermiamo la pallina se la velocità è molto bassa
+		if (Math.abs(this.vx) < 0.01 && Math.abs(this.vy) < 0.01) {
+			this.vx = 0;
+			this.vy = 0;
+		}
+	}
+	
+	    display() {
+        fill(this.color);
+        noStroke();
+        ellipse(this.x, this.y, this.diameter);
     }
+
+    applyForce(fx, fy) {
+        this.vx = fx;
+        this.vy = fy;
+    }
+	
 }
 
 class Castle {
@@ -392,29 +429,31 @@ class Castle {
 function checkCollision(ball1, ball2) {
     let dx = ball2.x - ball1.x;
     let dy = ball2.y - ball1.y;
-    let distance = Math.sqrt(dx * dx + dy * dy);
+    let distanceSquared = dx * dx + dy * dy;
     let minDistance = ball1.radius + ball2.radius;
 
-    if (distance < minDistance) {
-        // Normalizzare il vettore della collisione
+    if (distanceSquared < minDistance * minDistance) {
+        let distance = Math.sqrt(distanceSquared);
         let nx = dx / distance;
         let ny = dy / distance;
 
         // Calcolare la velocità relativa
         let dvx = ball2.vx - ball1.vx;
         let dvy = ball2.vy - ball1.vy;
+        let dotProduct = dvx * nx + dvy * ny;
 
-        // Calcolare l'impulso
-        let impulse = (-(1 + RESTITUTION) * (dvx * nx + dvy * ny)) / 
+        // Se le palline si stanno allontanando, non facciamo nulla
+        if (dotProduct > 0) return;
+
+        let impulse = -(1 + RESTITUTION) * dotProduct / 
                       (1 / ball1.mass + 1 / ball2.mass);
 
-        // Applicare l'impulso
         ball1.vx -= impulse * nx / ball1.mass;
         ball1.vy -= impulse * ny / ball1.mass;
         ball2.vx += impulse * nx / ball2.mass;
         ball2.vy += impulse * ny / ball2.mass;
 
-        // Separare le palline
+        // Separiamo le palline
         let correction = (minDistance - distance) / 2;
         ball1.x -= nx * correction;
         ball1.y -= ny * correction;
