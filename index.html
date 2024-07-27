@@ -1,0 +1,429 @@
+<html>
+<head>
+<base href="https://boccettetrainingtable.netlify.app/">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Matamà & Boccette</title>
+<link href="https://fonts.googleapis.com/css2?family=Italianno&display=swap" rel="stylesheet">
+<style>
+body {
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background-color: #2c3e50;
+    font-family: Arial, sans-serif;
+    color: #ecf0f1;
+    margin: 0;
+    padding: 0;
+}
+
+#game-container {
+    position: relative;
+    margin: 20px;
+}
+
+#pool-table {
+    background-color: #27ae60;
+    border: 20px solid #8b4513;
+    box-shadow: 0 0 20px rgba(0,0,0,0.5);
+}
+
+.diamond {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background-color: #ecf0f1;
+    transform: rotate(45deg);
+}
+
+#instructions {
+    text-align: center;
+    margin-top: 10px;
+    margin-bottom: 20px;
+    font-size: 14px;
+    color: #ecf0f1;
+}
+
+#watermark {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 72px;
+    font-family: 'Italianno', cursive;
+    color: rgba(255, 255, 255, 0.1);
+    pointer-events: none;
+    white-space: nowrap;
+}
+
+#credits {
+    margin-top: 10px;
+    margin-bottom: 10px;
+    font-size: 14px;
+    text-align: center;
+}
+
+#controls {
+    margin-top: 20px;
+    margin-bottom: 10px;
+    padding-top: 5px;
+    border-top: 0px solid #ecf0f1;
+}
+
+#controls input {
+    margin: 0 10px;
+    padding: 5px;
+}
+
+#controls button {
+    padding: 5px 10px;
+    background-color: #3498db;
+    color: white;
+    border: none;
+    cursor: pointer;
+}
+
+#controls button:hover {
+    background-color: #2980b9;
+}
+
+#message {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 24px;
+    color: red;
+    background-color: rgba(255, 255, 255, 0.8);
+    padding: 10px;
+    border-radius: 5px;
+    display: none;
+}
+#title {
+    font-family: 'Italianno', cursive;
+    font-size: 48px;
+    color: #ffffff;
+    text-align: center;
+    margin-top: 10px;
+    margin-bottom: 3px;
+}
+</style>
+</head>
+<body>
+<h1 id="title">Matamà & Boccette</h1>
+<div id="controls">
+    <label for="tableWidth">Larghezza (cm):</label>
+    <input type="number" id="tableWidth" value="277.0" min="100" max="500" step="0.1">
+    <label for="tableLength">Lunghezza (cm):</label>
+    <input type="number" id="tableLength" value="138.5" min="100" max="500" step="0.1">
+    <label for="friction">Coefficiente di scorrimento (0-1):</label>
+    <input type="number" id="friction" value="0.99" min="0.8" max="0.999" step="0.001">
+    <label for="showGhost">Mostra traiettoria:</label>
+    <input type="checkbox" id="showGhost">
+    <button onclick="updateTable()">Aggiorna</button>
+</div>
+
+<div id="instructions">
+    Clicca per posizionare la palla rossa, poi la bianca, infine sposta il mouse per definire direzione e forza
+</div>
+
+<div id="game-container">
+    <div id="pool-table"></div>
+    <div id="watermark">Matamà & Boccette</div>
+    <div id="message"></div>
+</div>
+
+<div id="credits">Developed by molder, for boccettari friends, in honor of Nino Agliolo.</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+<script>
+let TABLE_WIDTH = 1108; // 277cm * 4px/cm
+let TABLE_HEIGHT = 554; // 138.5cm * 4px/cm
+const BALL_DIAMETER = 23.2; // 58mm * 4px/cm * 0.1cm/mm
+let FRICTION = 0.99;
+const RESTITUTION = 0.8;
+
+let whiteBall, redBall;
+let startX, startY;
+let isDragging = false;
+let canvas;
+let ghostPath = [];
+let showGhost = false;
+let castle;
+let message;
+let ballPath = [];
+let placingRedBall = true;
+
+function setup() {
+    updateTable();
+    message = document.getElementById('message');
+}
+
+function updateTable() {
+    TABLE_WIDTH = document.getElementById('tableWidth').value * 4;
+    TABLE_HEIGHT = document.getElementById('tableLength').value * 4;
+    FRICTION = parseFloat(document.getElementById('friction').value);
+    showGhost = document.getElementById('showGhost').checked;
+
+    if (canvas) {
+        canvas.remove();
+    }
+    canvas = createCanvas(TABLE_WIDTH, TABLE_HEIGHT);
+    canvas.parent('pool-table');
+    canvas.mousePressed(canvasMousePressed);
+    
+    document.getElementById('game-container').style.width = TABLE_WIDTH + 40 + 'px';
+    document.getElementById('game-container').style.height = TABLE_HEIGHT + 40 + 'px';
+    
+    whiteBall = new Ball(width / 3, height / 3, BALL_DIAMETER, 'white');
+    redBall = new Ball(2 * width / 3, height / 3, BALL_DIAMETER, 'red');
+    castle = new Castle(width / 2, height / 2);
+    createDiamonds();
+    updateWatermarkPosition();
+    ballPath = [];
+    placingRedBall = true;
+}
+
+function updateWatermarkPosition() {
+    const watermark = document.getElementById('watermark');
+    watermark.style.top = (TABLE_HEIGHT * 0.75) + 'px';
+}
+
+function draw() {
+    background('#27ae60');
+    castle.display();
+    
+    if (showGhost && ballPath.length > 0) {
+        noFill();
+        stroke(255, 100);
+        beginShape();
+        for (let point of ballPath) {
+            vertex(point.x, point.y);
+        }
+        endShape();
+    }
+    
+    whiteBall.update();
+    redBall.update();
+    whiteBall.display();
+    redBall.display();
+
+    if (isDragging) {
+        stroke(255);
+        line(startX, startY, mouseX, mouseY);
+        if (showGhost) {
+            drawGhostPath();
+        }
+    }
+
+    checkCollision(whiteBall, redBall);
+
+    if (castle.checkCollision(whiteBall)) {
+        showMessage("Hai bevuto! Niente matamà per te");
+    } else if (castle.checkCollision(redBall)) {
+        showMessage("Bel colpo!");
+    }
+    
+    if (abs(whiteBall.vx) > 0.01 || abs(whiteBall.vy) > 0.01) {
+        ballPath.push({x: whiteBall.x, y: whiteBall.y});
+    }
+}
+
+function canvasMousePressed() {
+    if (placingRedBall) {
+        redBall.x = mouseX;
+        redBall.y = mouseY;
+        redBall.vx = 0;
+        redBall.vy = 0;
+        placingRedBall = false;
+    } else if (!isDragging) {
+        startX = mouseX;
+        startY = mouseY;
+        whiteBall.x = startX;
+        whiteBall.y = startY;
+        whiteBall.vx = 0;
+        whiteBall.vy = 0;
+        isDragging = true;
+        ghostPath = [];
+        ballPath = [];
+    } else {
+        let force = dist(startX, startY, mouseX, mouseY) / 10;
+        let angle = atan2(mouseY - startY, mouseX - startX);
+        whiteBall.applyForce(force * cos(angle), force * sin(angle));
+        isDragging = false;
+        placingRedBall = true;
+    }
+}
+
+function createDiamonds() {
+    const gameContainer = document.getElementById('game-container');
+    const existingDiamonds = gameContainer.querySelectorAll('.diamond');
+    existingDiamonds.forEach(diamond => diamond.remove());
+
+    const diamondPositions = [
+        ...Array(9).fill().map((_, i) => ({x: i/8, y: 0})),
+        ...Array(9).fill().map((_, i) => ({x: i/8, y: 1})),
+        ...Array(5).fill().map((_, i) => ({x: 0, y: i/4})),
+        ...Array(5).fill().map((_, i) => ({x: 1, y: i/4}))
+    ];
+
+    diamondPositions.forEach(pos => {
+        let diamond = createDiv('');
+        diamond.addClass('diamond');
+        diamond.position(pos.x * TABLE_WIDTH + 15, pos.y * TABLE_HEIGHT + 15);
+        diamond.parent('game-container');
+    });
+}
+
+function drawGhostPath() {
+    let ghostBall = new Ball(startX, startY, BALL_DIAMETER, 'white');
+    let force = dist(startX, startY, mouseX, mouseY) / 10;
+    let angle = atan2(mouseY - startY, mouseX - startX);
+    ghostBall.applyForce(force * cos(angle), force * sin(angle));
+
+    ghostPath = [];
+    while (abs(ghostBall.vx) > 0.01 || abs(ghostBall.vy) > 0.01) {
+        ghostBall.update();
+        ghostPath.push({x: ghostBall.x, y: ghostBall.y});
+    }
+
+    noFill();
+    stroke(255, 100);
+    beginShape();
+    for (let point of ghostPath) {
+        vertex(point.x, point.y);
+    }
+    endShape();
+}
+
+function showMessage(text) {
+    message.textContent = text;
+    message.style.display = 'block';
+    setTimeout(() => {
+        message.style.display = 'none';
+    }, 2000);
+}
+
+class Ball {
+    constructor(x, y, diameter, color) {
+        this.x = x;
+        this.y = y;
+        this.diameter = diameter;
+        this.radius = diameter / 2;
+        this.vx = 0;
+        this.vy = 0;
+        this.color = color;
+    }
+
+    update() {
+        this.x += this.vx;
+        this.y += this.vy;
+
+        if (this.x - this.radius < 0 || this.x + this.radius > width) {
+            this.vx *= -RESTITUTION;
+            this.x = constrain(this.x, this.radius, width - this.radius);
+        }
+        if (this.y - this.radius < 0 || this.y + this.radius > height) {
+            this.vy *= -RESTITUTION;
+            this.y = constrain(this.y, this.radius, height - this.radius);
+        }
+
+        this.vx *= FRICTION;
+        this.vy *= FRICTION;
+    }
+
+    display() {
+        fill(this.color);
+        noStroke();
+        ellipse(this.x, this.y, this.diameter);
+    }
+
+    applyForce(fx, fy) {
+        this.vx = fx;
+        this.vy = fy;
+    }
+}
+
+class Castle {
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.pinRadius = 2; // 4mm * 4px/cm * 0.1cm/mm
+        this.distance = 24; // 60mm * 4px/cm * 0.1cm/mm
+    }
+
+    display() {
+        fill(255, 0, 0); // Red for central pin
+        ellipse(this.x, this.y, this.pinRadius * 2); // Central red pin
+        fill(255); // White for lateral pins
+        ellipse(this.x - this.distance, this.y, this.pinRadius * 2);
+        ellipse(this.x + this.distance, this.y, this.pinRadius * 2);
+        ellipse(this.x, this.y - this.distance, this.pinRadius * 2);
+        ellipse(this.x, this.y + this.distance, this.pinRadius * 2);
+    }
+
+    checkCollision(ball) {
+        let pins = [
+            {x: this.x, y: this.y},
+            {x: this.x - this.distance, y: this.y},
+            {x: this.x + this.distance, y: this.y},
+            {x: this.x, y: this.y - this.distance},
+            {x: this.x, y: this.y + this.distance}
+        ];
+
+        for (let pin of pins) {
+            let d = dist(ball.x, ball.y, pin.x, pin.y);
+            if (d < ball.radius + this.pinRadius) {
+                return true;
+            }
+        }
+        return false;
+    }
+}
+
+function checkCollision(ball1, ball2) {
+    let dx = ball2.x - ball1.x;
+    let dy = ball2.y - ball1.y;
+    let distance = Math.sqrt(dx * dx + dy * dy);
+
+    if (distance < ball1.radius + ball2.radius) {
+        // Calcolo dell'angolo di collisione
+        let collisionAngle = Math.atan2(dy, dx);
+
+        // Velocità iniziali
+        let speed1 = Math.sqrt(ball1.vx * ball1.vx + ball1.vy * ball1.vy);
+        let speed2 = Math.sqrt(ball2.vx * ball2.vx + ball2.vy * ball2.vy);
+
+        // Direzioni iniziali
+        let direction1 = Math.atan2(ball1.vy, ball1.vx);
+        let direction2 = Math.atan2(ball2.vy, ball2.vx);
+
+        // Velocità finali
+        let newVx1 = speed2 * Math.cos(direction2 - collisionAngle) * Math.cos(collisionAngle) + speed1 * Math.sin(direction1 - collisionAngle) * Math.cos(collisionAngle + Math.PI/2);
+        let newVy1 = speed2 * Math.cos(direction2 - collisionAngle) * Math.sin(collisionAngle) + speed1 * Math.sin(direction1 - collisionAngle) * Math.sin(collisionAngle + Math.PI/2);
+        let newVx2 = speed1 * Math.cos(direction1 - collisionAngle) * Math.cos(collisionAngle) + speed2 * Math.sin(direction2 - collisionAngle) * Math.cos(collisionAngle + Math.PI/2);
+        let newVy2 = speed1 * Math.cos(direction1 - collisionAngle) * Math.sin(collisionAngle) + speed2 * Math.sin(direction2 - collisionAngle) * Math.sin(collisionAngle + Math.PI/2);
+
+        // Assegnazione delle nuove velocità
+        ball1.vx = newVx1;
+        ball1.vy = newVy1;
+        ball2.vx = newVx2;
+        ball2.vy = newVy2;
+
+        // Evita che le palline si sovrappongano
+        let overlap = (ball1.radius + ball2.radius) - distance;
+        let moveX = overlap * Math.cos(collisionAngle) / 2;
+        let moveY = overlap * Math.sin(collisionAngle) / 2;
+        
+        ball1.x -= moveX;
+        ball1.y -= moveY;
+        ball2.x += moveX;
+        ball2.y += moveY;
+    }
+}
+</script>
+</body>
+</html>
