@@ -264,7 +264,7 @@ function canvasMousePressed() {
         ghostPath = [];
         ballPath = [];
     } else {
-        let force = dist(startX, startY, mouseX, mouseY) / 10;
+        let force = dist(startX, startY, mouseX, mouseY) / 50;
         let angle = atan2(mouseY - startY, mouseX - startX);
         whiteBall.applyForce(force * cos(angle), force * sin(angle));
         isDragging = false;
