@@ -145,6 +145,7 @@ let TABLE_HEIGHT = 554; // 138.5cm * 4px/cm
 const BALL_DIAMETER = 23.2; // 58mm * 4px/cm * 0.1cm/mm
 let FRICTION = 0.90;
 const RESTITUTION = 0.8;
+const shotlenght = 50
 
 let whiteBall, redBall;
 let startX, startY;
@@ -264,7 +265,7 @@ function canvasMousePressed() {
         ghostPath = [];
         ballPath = [];
     } else {
-        let force = dist(startX, startY, mouseX, mouseY) / 50;
+        let force = dist(startX, startY, mouseX, mouseY) / shotlenght;
         let angle = atan2(mouseY - startY, mouseX - startX);
         whiteBall.applyForce(force * cos(angle), force * sin(angle));
         isDragging = false;
@@ -294,7 +295,7 @@ function createDiamonds() {
 
 function drawGhostPath() {
     let ghostBall = new Ball(startX, startY, BALL_DIAMETER, 'white');
-    let force = dist(startX, startY, mouseX, mouseY) / 10;
+    let force = dist(startX, startY, mouseX, mouseY) / shotlenght;
     let angle = atan2(mouseY - startY, mouseX - startX);
     ghostBall.applyForce(force * cos(angle), force * sin(angle));
 
